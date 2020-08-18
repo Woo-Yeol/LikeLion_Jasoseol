@@ -1,36 +1,55 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import JssForm
-from .models import Jasoseol
+from .models import Jasoseol 
+from django.core.exceptions import PermissionDenied 
+from django.contrib.auth.decorators import login_required
 # from django.http import Http404
 # Create your views here.
 
 def index(request):
     all_jss = Jasoseol.objects.all()
     return render(request, 'index.html', {'all_jss':all_jss})
+    
+@login_required(login_url='/login/')
+def my_index(request):
+    my_jss = Jasoseol.objects.filter(author=request.user)
+    return render(request, 'index.html', {'all_jss':my_jss})
 
+@login_required(login_url='/login/')
 def create(request):
+    # # 로그인이 되지 않은 회원이라면 로그인 창으로 redirect한다.
+    # if request.user.is_authenticated:
+    #     return redirect('login')
+
     if request.method == "POST":
         filled_form = JssForm(request.POST)
         if filled_form.is_valid():
+            temp_form = filled_form.save(commit=False)
+            temp_form.author = request.user
+            temp_form.save()
             filled_form.save()
             return redirect('index')
     jss_form = JssForm()
     return render(request, 'create.html', {'jss_form':jss_form})
 
+@login_required(login_url='/login/')
 def detail(request, jss_id):
     # try:
     #     my_jss = Jasoseol.objects.get(pk=jss_id)
     # except:
     #     raise Http404
 
-    my_jss = get_object_or404(Jasoseol, pk =jss_id)
+    my_jss = get_object_or_404(Jasoseol, pk =jss_id)
 
     return render(request, 'detail.html', {'my_jss' : my_jss})
 
 def delete(request, jss_id):
     my_jss = Jasoseol.objects.get(pk=jss_id)
-    my_jss.delete()
-    return redirect('index')
+    if request.user == my_jss.author:
+        my_jss.delete()
+        return redirect('index')
+    
+    raise PermissionDenied
 
 def update(request, jss_id):
     my_jss = Jasoseol.objects.get(pk=jss_id)
