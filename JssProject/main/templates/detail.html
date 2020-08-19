@@ -19,8 +19,8 @@
 </form>
 {% endif %}
 
+<!-- Comment -->
 {% for comment in my_jss.comment_set.all %}
-
 <p>
     {{comment.author}} 🔊 {{comment.content}}
     {% if user == comment.author %}
@@ -29,6 +29,4 @@
     </a>
     {% endif %}
 </p>
-
-
 {% endfor %}
